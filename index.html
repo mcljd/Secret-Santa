@@ -5,259 +5,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Secret Santa Draw</title>
 <style>
-  :root {
-    --bg: #0f3d2e;
-    --card: #fffaf0;
-    --ink: #1d2b24;
-    --muted: #5d6b63;
-    --red: #b3261e;
-    --red-dark: #8c1c16;
-    --gold: #d9a441;
-    --line: #e6dcc6;
-  }
+  :root { --bg:#0f3d2e; --card:#fffaf0; --ink:#1d2b24; --muted:#5d6b63; --red:#b3261e; --red-dark:#8c1c16; --gold:#d9a441; --line:#e6dcc6; }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    min-height: 100vh;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: Georgia, "Times New Roman", serif;
-    display: flex;
-    justify-content: center;
-    padding: 24px 16px 48px;
-  }
-  main {
-    width: 100%;
-    max-width: 520px;
-    background: var(--card);
-    border-radius: 14px;
-    border-top: 6px solid var(--gold);
-    padding: 28px 22px 26px;
-    align-self: flex-start;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, .35);
-  }
-  h1 { margin: 0 0 6px; font-size: 1.9rem; text-align: center; color: var(--red); }
-  p { line-height: 1.5; margin: 10px 0; }
-  .sub { text-align: center; color: var(--muted); margin-bottom: 20px; }
-  button {
-    font: inherit;
-    cursor: pointer;
-    border-radius: 8px;
-    border: 1px solid var(--red);
-    background: #fff;
-    color: var(--red);
-    padding: 9px 13px;
-  }
-  button:hover { background: #fbeceb; }
-  button.primary {
-    display: block;
-    width: 100%;
-    padding: 14px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    background: var(--red);
-    color: #fff;
-  }
-  button.primary:hover { background: var(--red-dark); }
-  ul { list-style: none; padding: 0; margin: 18px 0 0; }
-  li {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 12px 0;
-    border-top: 1px solid var(--line);
-  }
-  li .name { font-weight: bold; letter-spacing: .04em; flex: 1 1 120px; }
-  li .result { flex: 1 1 100%; color: var(--muted); min-height: 1.4em; }
-  li .result b { color: var(--red); }
-  .note { font-size: .9rem; color: var(--muted); }
-  .big {
-    text-align: center;
-    font-size: 1.7rem;
-    font-weight: bold;
-    color: var(--red);
-    margin: 18px 0;
-    letter-spacing: .05em;
-  }
-  .center { text-align: center; }
-  [hidden] { display: none !important; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font-family:Georgia,"Times New Roman",serif; display:flex; justify-content:center; padding:24px 16px 48px; }
+  main { width:100%; max-width:520px; background:var(--card); border-radius:14px; border-top:6px solid var(--gold); padding:28px 22px 26px; align-self:flex-start; box-shadow:0 12px 30px rgba(0,0,0,.35); }
+  h1 { margin:0 0 6px; font-size:1.9rem; text-align:center; color:var(--red); }
+  p { line-height:1.5; margin:10px 0; }
+  .sub { text-align:center; color:var(--muted); margin-bottom:20px; }
+  .center { text-align:center; }
+  .note { font-size:.9rem; color:var(--muted); }
+  ul { list-style:none; padding:0; margin:18px 0 0; }
+  li { border-top:1px solid var(--line); }
+  li a { display:block; padding:14px 4px; font-weight:bold; letter-spacing:.04em; color:var(--ink); text-decoration:none; }
+  li a:hover { color:var(--red); }
+  li a::after { content:"\203A"; float:right; color:var(--gold); }
+  label { display:block; margin:18px 0 6px; font-weight:bold; }
+  input { width:100%; font:inherit; font-size:1.3rem; letter-spacing:.15em; text-align:center; text-transform:uppercase; padding:12px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
+  button { display:block; width:100%; margin-top:14px; font:inherit; font-size:1.1rem; font-weight:bold; cursor:pointer; border-radius:8px; border:1px solid var(--red); background:var(--red); color:#fff; padding:14px; }
+  button:hover { background:var(--red-dark); }
+  button:disabled { opacity:.6; cursor:wait; }
+  .error { color:var(--red); text-align:center; min-height:1.5em; }
+  .big { text-align:center; font-size:1.7rem; font-weight:bold; color:var(--red); margin:18px 0; letter-spacing:.05em; }
+  .back { display:block; text-align:center; margin-top:20px; color:var(--muted); }
+  [hidden] { display:none !important; }
+
 </style>
 </head>
 <body>
 <main>
   <h1>Secret Santa Draw</h1>
-
-  <!-- Organiser view -->
-  <section id="organiser">
-    <p class="sub" id="intro"></p>
-    <button class="primary" id="draw">Draw names</button>
-    <ul id="list"></ul>
-    <p class="note" id="help" hidden>
-      Send each person their own link, or pass this device round and let each
-      person tap <em>Reveal</em> on their own name. A revealed name hides itself
-      after a few seconds.
-    </p>
-  </section>
-
-  <!-- Private link view -->
-  <section id="personal" hidden>
-    <p class="center">Hello <b id="giver"></b>. Make sure nobody is looking over your shoulder.</p>
-    <button class="primary" id="show">Show who I'm buying for</button>
-    <div id="answer" hidden>
-      <p class="center">You are buying a gift for</p>
-      <p class="big" id="receiver"></p>
-      <p class="center note">Keep it secret.</p>
-    </div>
-  </section>
+  <p class="sub">The names have been drawn. Choose your own name and enter your personal code.</p>
+  <ul>
+    <li><a href="bus.html">BUS</a></li>
+    <li><a href="fart.html">FART</a></li>
+    <li><a href="skids.html">SKIDS</a></li>
+    <li><a href="blueamn.html">BLUEAMN</a></li>
+    <li><a href="ghandi.html">GHANDI</a></li>
+    <li><a href="joseph.html">JOSEPH</a></li>
+  </ul>
+  <p class="note center">Each page opens only with that person's code.</p>
 </main>
-
-<script>
-(function () {
-  "use strict";
-
-  var NAMES = ["BUS", "FART", "SKIDS", "BLUEAMN", "GHANDI", "JOSEPH"];
-  var STORE = "secret-santa-draw";
-  var REVEAL_MS = 5000;
-
-  function $(id) { return document.getElementById(id); }
-
-  // Unbiased random integer in [0, n)
-  function rand(n) {
-    var limit = Math.floor(4294967296 / n) * n;
-    var buf = new Uint32Array(1);
-    do { crypto.getRandomValues(buf); } while (buf[0] >= limit);
-    return buf[0] % n;
-  }
-
-  // Sattolo's algorithm: a random single cycle, so nobody draws themselves.
-  function drawCycle(n) {
-    var a = [];
-    for (var i = 0; i < n; i++) a.push(i);
-    for (var k = n - 1; k > 0; k--) {
-      var j = rand(k);
-      var t = a[k]; a[k] = a[j]; a[j] = t;
-    }
-    return a;
-  }
-
-  // Tokens are obscured so a link cannot be read at a glance. This is not encryption.
-  function encode(giver, receiver) {
-    var json = JSON.stringify([giver, receiver]);
-    var b64 = btoa(unescape(encodeURIComponent(json)));
-    return b64.split("").reverse().join("")
-      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-  }
-  function decode(token) {
-    try {
-      var b64 = token.replace(/-/g, "+").replace(/_/g, "/").split("").reverse().join("");
-      var pair = JSON.parse(decodeURIComponent(escape(atob(b64))));
-      if (Array.isArray(pair) && pair.length === 2 &&
-          typeof pair[0] === "string" && typeof pair[1] === "string") return pair;
-    } catch (e) {}
-    return null;
-  }
-
-  function load() {
-    try {
-      var saved = JSON.parse(localStorage.getItem(STORE));
-      if (Array.isArray(saved) && saved.length === NAMES.length) return saved;
-    } catch (e) {}
-    return null;
-  }
-  function save(tokens) {
-    try { localStorage.setItem(STORE, JSON.stringify(tokens)); } catch (e) {}
-  }
-
-  function linkFor(token) {
-    return location.href.split("#")[0] + "#for=" + token;
-  }
-
-  function renderList(tokens) {
-    var list = $("list");
-    list.textContent = "";
-    NAMES.forEach(function (name, i) {
-      var li = document.createElement("li");
-      var label = document.createElement("span");
-      label.className = "name";
-      label.textContent = name;
-      li.appendChild(label);
-
-      if (tokens) {
-        var result = document.createElement("span");
-        result.className = "result";
-        var timer = null;
-
-        var reveal = document.createElement("button");
-        reveal.textContent = "Reveal";
-        reveal.addEventListener("click", function () {
-          var pair = decode(tokens[i]);
-          if (!pair) return;
-          result.textContent = "Buying for ";
-          var b = document.createElement("b");
-          b.textContent = pair[1];
-          result.appendChild(b);
-          clearTimeout(timer);
-          timer = setTimeout(function () { result.textContent = ""; }, REVEAL_MS);
-        });
-
-        var copy = document.createElement("button");
-        copy.textContent = "Copy link";
-        copy.addEventListener("click", function () {
-          var url = linkFor(tokens[i]);
-          var done = function () {
-            copy.textContent = "Copied";
-            setTimeout(function () { copy.textContent = "Copy link"; }, 1500);
-          };
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(url).then(done, function () { prompt("Copy this link for " + name, url); });
-          } else {
-            prompt("Copy this link for " + name, url);
-          }
-        });
-
-        li.appendChild(reveal);
-        li.appendChild(copy);
-        li.appendChild(result);
-      }
-      list.appendChild(li);
-    });
-    $("help").hidden = !tokens;
-    $("draw").textContent = tokens ? "Draw again" : "Draw names";
-    $("intro").textContent = tokens
-      ? "The names have been drawn."
-      : NAMES.length + " people are in the hat.";
-  }
-
-  function draw() {
-    if (load() && !confirm("Draw again? Every link already sent out will be wrong.")) return;
-    var cycle = drawCycle(NAMES.length);
-    var tokens = NAMES.map(function (name, i) { return encode(name, NAMES[cycle[i]]); });
-    save(tokens);
-    renderList(tokens);
-  }
-
-  function showPersonal(pair) {
-    $("organiser").hidden = true;
-    $("personal").hidden = false;
-    $("giver").textContent = pair[0];
-    $("show").addEventListener("click", function () {
-      $("receiver").textContent = pair[1];
-      $("answer").hidden = false;
-      $("show").hidden = true;
-    });
-  }
-
-  var match = /^#for=(.+)$/.exec(location.hash);
-  var pair = match ? decode(match[1]) : null;
-  if (pair) {
-    showPersonal(pair);
-  } else {
-    $("draw").addEventListener("click", draw);
-    renderList(load());
-  }
-  window.addEventListener("hashchange", function () { location.reload(); });
-})();
-</script>
 </body>
 </html>

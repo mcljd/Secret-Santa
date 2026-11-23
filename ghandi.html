@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Secret Santa Draw: GHANDI</title>
+<style>
+  :root { --bg:#0f3d2e; --card:#fffaf0; --ink:#1d2b24; --muted:#5d6b63; --red:#b3261e; --red-dark:#8c1c16; --gold:#d9a441; --line:#e6dcc6; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font-family:Georgia,"Times New Roman",serif; display:flex; justify-content:center; padding:24px 16px 48px; }
+  main { width:100%; max-width:520px; background:var(--card); border-radius:14px; border-top:6px solid var(--gold); padding:28px 22px 26px; align-self:flex-start; box-shadow:0 12px 30px rgba(0,0,0,.35); }
+  h1 { margin:0 0 6px; font-size:1.9rem; text-align:center; color:var(--red); }
+  p { line-height:1.5; margin:10px 0; }
+  .sub { text-align:center; color:var(--muted); margin-bottom:20px; }
+  .center { text-align:center; }
+  .note { font-size:.9rem; color:var(--muted); }
+  ul { list-style:none; padding:0; margin:18px 0 0; }
+  li { border-top:1px solid var(--line); }
+  li a { display:block; padding:14px 4px; font-weight:bold; letter-spacing:.04em; color:var(--ink); text-decoration:none; }
+  li a:hover { color:var(--red); }
+  li a::after { content:"\203A"; float:right; color:var(--gold); }
+  label { display:block; margin:18px 0 6px; font-weight:bold; }
+  input { width:100%; font:inherit; font-size:1.3rem; letter-spacing:.15em; text-align:center; text-transform:uppercase; padding:12px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
+  button { display:block; width:100%; margin-top:14px; font:inherit; font-size:1.1rem; font-weight:bold; cursor:pointer; border-radius:8px; border:1px solid var(--red); background:var(--red); color:#fff; padding:14px; }
+  button:hover { background:var(--red-dark); }
+  button:disabled { opacity:.6; cursor:wait; }
+  .error { color:var(--red); text-align:center; min-height:1.5em; }
+  .big { text-align:center; font-size:1.7rem; font-weight:bold; color:var(--red); margin:18px 0; letter-spacing:.05em; }
+  .back { display:block; text-align:center; margin-top:20px; color:var(--muted); }
+  [hidden] { display:none !important; }
+
+</style>
+</head>
+<body>
+<main>
+  <h1>Secret Santa Draw</h1>
+  <p class="sub">This page is for <b>GHANDI</b> only.</p>
+
+  <form id="gate">
+    <label for="code">Your personal code</label>
+    <input id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX" maxlength="12">
+    <button id="open" type="submit">Show who I'm buying for</button>
+    <p class="error" id="error" role="alert"></p>
+    <p class="note center">Make sure nobody is looking over your shoulder.</p>
+  </form>
+
+  <div id="answer" hidden>
+    <p class="center">GHANDI, you are buying a gift for</p>
+    <p class="big" id="receiver"></p>
+    <p class="center note">Keep it secret.</p>
+  </div>
+
+  <a class="back" href="./">All names</a>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var BOX = {"s":"uP2O5RZmQHDLtzlUOZziIQ==","i":"vQlbiGcCAQBZndhU","c":"Ae2QOT7KcziZu6htaMMafx5L2dNlieRps6p/oDdRFtJMc/cSF/tHa/5gV6d0bk8E+WQCZ2sZJ0dQ/GY2ZZJe2A=="};
+  var ITER = 310000;
+
+  function $(id) { return document.getElementById(id); }
+  function bytes(b64) {
+    var bin = atob(b64), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function clean(s) { return s.toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+
+  function open(code) {
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey("raw", enc.encode(code), "PBKDF2", false, ["deriveKey"])
+      .then(function (base) {
+        return crypto.subtle.deriveKey(
+          { name: "PBKDF2", salt: bytes(BOX.s), iterations: ITER, hash: "SHA-256" },
+          base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      })
+      .then(function (key) {
+        return crypto.subtle.decrypt({ name: "AES-GCM", iv: bytes(BOX.i) }, key, bytes(BOX.c));
+      })
+      .then(function (plain) { return new TextDecoder().decode(plain).trim(); });
+  }
+
+  // A code in the link (page.html#CODE) is filled in, then removed from the address bar.
+  if (location.hash.length > 1) {
+    $("code").value = clean(decodeURIComponent(location.hash.slice(1)));
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+  }
+
+  $("gate").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var code = clean($("code").value);
+    $("error").textContent = "";
+    if (!window.crypto || !crypto.subtle) {
+      $("error").textContent = "This browser cannot open the page. Try a current browser over https.";
+      return;
+    }
+    if (!code) { $("error").textContent = "Enter your code."; return; }
+    $("open").disabled = true;
+    open(code).then(function (name) {
+      $("receiver").textContent = name;
+      $("gate").hidden = true;
+      $("answer").hidden = false;
+    }, function () {
+      $("open").disabled = false;
+      $("error").textContent = "That code does not open this page.";
+    });
+  });
+})();
+</script>
+</body>
+</html>
