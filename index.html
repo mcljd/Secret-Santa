@@ -3,47 +3,139 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
 <title>Secret Santa Draw</title>
 <style>
   :root { --bg:#0f3d2e; --card:#fffaf0; --ink:#1d2b24; --muted:#5d6b63; --red:#b3261e; --red-dark:#8c1c16; --gold:#d9a441; --line:#e6dcc6; }
   * { box-sizing: border-box; }
   body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font-family:Georgia,"Times New Roman",serif; display:flex; justify-content:center; padding:24px 16px 48px; }
-  main { width:100%; max-width:520px; background:var(--card); border-radius:14px; border-top:6px solid var(--gold); padding:28px 22px 26px; align-self:flex-start; box-shadow:0 12px 30px rgba(0,0,0,.35); }
+  main { width:100%; max-width:440px; background:var(--card); border-radius:14px; border-top:6px solid var(--gold); padding:28px 22px 26px; align-self:flex-start; box-shadow:0 12px 30px rgba(0,0,0,.35); }
   h1 { margin:0 0 6px; font-size:1.9rem; text-align:center; color:var(--red); }
-  p { line-height:1.5; margin:10px 0; }
-  .sub { text-align:center; color:var(--muted); margin-bottom:20px; }
-  .center { text-align:center; }
+  p { line-height:1.5; margin:10px 0; text-align:center; }
+  .sub { color:var(--muted); margin-bottom:18px; }
   .note { font-size:.9rem; color:var(--muted); }
-  ul { list-style:none; padding:0; margin:18px 0 0; }
-  li { border-top:1px solid var(--line); }
-  li a { display:block; padding:14px 4px; font-weight:bold; letter-spacing:.04em; color:var(--ink); text-decoration:none; }
-  li a:hover { color:var(--red); }
-  li a::after { content:"\203A"; float:right; color:var(--gold); }
-  label { display:block; margin:18px 0 6px; font-weight:bold; }
-  input { width:100%; font:inherit; font-size:1.3rem; letter-spacing:.15em; text-align:center; text-transform:uppercase; padding:12px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
-  button { display:block; width:100%; margin-top:14px; font:inherit; font-size:1.1rem; font-weight:bold; cursor:pointer; border-radius:8px; border:1px solid var(--red); background:var(--red); color:#fff; padding:14px; }
-  button:hover { background:var(--red-dark); }
+  button { display:block; width:100%; margin-top:10px; font:inherit; font-size:1.15rem; font-weight:bold; letter-spacing:.04em; cursor:pointer; border-radius:8px; padding:14px; border:1px solid var(--red); background:#fff; color:var(--red); }
+  button:hover { background:#fbeceb; }
+  button.primary { background:var(--red); color:#fff; }
+  button.primary:hover { background:var(--red-dark); }
+  button.plain { border-color:transparent; background:transparent; color:var(--muted); font-weight:normal; font-size:1rem; }
   button:disabled { opacity:.6; cursor:wait; }
-  .error { color:var(--red); text-align:center; min-height:1.5em; }
-  .big { text-align:center; font-size:1.7rem; font-weight:bold; color:var(--red); margin:18px 0; letter-spacing:.05em; }
-  .back { display:block; text-align:center; margin-top:20px; color:var(--muted); }
+  input { width:100%; margin-top:6px; font:inherit; font-size:1.8rem; letter-spacing:.4em; text-align:center; padding:12px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
+  .error { color:var(--red); min-height:1.5em; }
+  .big { font-size:1.9rem; font-weight:bold; color:var(--red); margin:16px 0; letter-spacing:.05em; }
   [hidden] { display:none !important; }
-
 </style>
 </head>
 <body>
 <main>
   <h1>Secret Santa Draw</h1>
-  <p class="sub">The names have been drawn. Choose your own name and enter your personal code.</p>
-  <ul>
-    <li><a href="bus.html">BUS</a></li>
-    <li><a href="fart.html">FART</a></li>
-    <li><a href="skids.html">SKIDS</a></li>
-    <li><a href="blueamn.html">BLUEAMN</a></li>
-    <li><a href="ghandi.html">GHANDI</a></li>
-    <li><a href="joseph.html">JOSEPH</a></li>
-  </ul>
-  <p class="note center">Each page opens only with that person's code.</p>
+
+  <section id="home">
+    <p class="sub">Tap your name.</p>
+    <div id="names"></div>
+  </section>
+
+  <form id="gate" hidden>
+    <p class="sub">Hello <b id="who"></b>. Enter your PIN.</p>
+    <input id="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="0000" aria-label="Your 4 digit PIN">
+    <button class="primary" id="open" type="submit">Show who I'm buying for</button>
+    <p class="error" id="error" role="alert"></p>
+    <button class="plain" id="back" type="button">Not me</button>
+  </form>
+
+  <section id="answer" hidden>
+    <p><b id="who2"></b>, you are buying a gift for</p>
+    <p class="big" id="receiver"></p>
+    <p class="note">Keep it secret.</p>
+    <button class="plain" id="hide" type="button">Hide</button>
+  </section>
 </main>
+
+<script>
+(function () {
+  "use strict";
+  // The draw is already done. Each result is locked with that person's PIN.
+  var PEOPLE = [{"n":"BUS","s":"VymTls4bas3GG6FZ8tCxGw==","i":"rWT0Vkv4IVf6nArk","c":"37JkESQEGEkdxuFEr1377ndFDoXnewPC9iyM2F22HIrJ1wW8UWdTfOGvAfBwfwCd2Xk3l2i46eXf9qAZmSZWlA=="},{"n":"FART","s":"Oe+ZM3nXMwYgIOljjK6ibg==","i":"6bh9R6CSOwvJyEJE","c":"fVmadnG6os6bxyfVbab7HmPu5F0dRUz/PU7lqvch4qICvhRIGpJHjUNjlumV39miJ+KcRXNs8M9/exPijnRYZg=="},{"n":"SKIDS","s":"/bcorwqOFioXoob/4aLwwA==","i":"1zK62KQO3LuX8wIG","c":"FCBdGuCeB14Pnn0PxhwV31mBZ1LfE3cSRrexLpt7BXH1nxzUamgc0E+GYJBrZxWItzoCHSMCo8K9wYxa/po1Qg=="},{"n":"BLUEMAN","s":"IfdcEuqH51sCkoxiWZSyhA==","i":"wtjpizcwz8eGMsCg","c":"I0AbJzFREEWYq59TRMwD+g1DaO9RNNkIS7qf5jDwHkDlQI9hxaYTewm1rGG12Kx3JNitpXax+9OVO2tMUReLIQ=="},{"n":"GHANDI","s":"fHH4JPDuQABObmQS8PBeag==","i":"+fCjtbcymtwkvgqw","c":"sq2KVRl3uEZ85Nf1Q5THrJN7/vGh1GewpeEMZeBa3yui0PCHNOOnVXilRj2quCQRyndzB9mk/+gzve6dDajNrQ=="},{"n":"JOSEPH","s":"WxqfKVvqge2t82uIAO571g==","i":"GO18wzCjzLXQdgua","c":"g+uEuRFO3kJeT8jG3dAZ5ubABKR02xfCstUFCzqCLYSSkHbvfsyfCV3qSMTGR6HslB3b6gmqvmL87APnBjAupg=="}];
+  var ITER = 400000;
+  var current = null;
+
+  function $(id) { return document.getElementById(id); }
+  function bytes(b64) {
+    var bin = atob(b64), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function show(id) {
+    ["home", "gate", "answer"].forEach(function (s) { $(s).hidden = s !== id; });
+  }
+
+  function unlock(person, pin) {
+    return crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveKey"])
+      .then(function (base) {
+        return crypto.subtle.deriveKey(
+          { name: "PBKDF2", salt: bytes(person.s), iterations: ITER, hash: "SHA-256" },
+          base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      })
+      .then(function (key) {
+        return crypto.subtle.decrypt({ name: "AES-GCM", iv: bytes(person.i) }, key, bytes(person.c));
+      })
+      .then(function (plain) { return new TextDecoder().decode(plain).trim(); });
+  }
+
+  function choose(person, pin) {
+    current = person;
+    $("who").textContent = person.n;
+    $("who2").textContent = person.n;
+    $("pin").value = pin || "";
+    $("error").textContent = "";
+    show("gate");
+    if (!pin) $("pin").focus();
+  }
+
+  function home() {
+    current = null;
+    $("receiver").textContent = "";
+    $("pin").value = "";
+    show("home");
+  }
+
+  PEOPLE.forEach(function (person) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = person.n;
+    b.addEventListener("click", function () { choose(person); });
+    $("names").appendChild(b);
+  });
+
+  $("back").addEventListener("click", home);
+  $("hide").addEventListener("click", home);
+
+  $("gate").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var pin = $("pin").value.replace(/\D/g, "");
+    $("error").textContent = "";
+    if (!window.crypto || !crypto.subtle) { $("error").textContent = "This browser cannot open it. Try a current browser."; return; }
+    if (pin.length !== 4) { $("error").textContent = "Enter your 4 digit PIN."; return; }
+    var person = current;
+    $("open").disabled = true;
+    unlock(person, pin).then(function (name) {
+      $("open").disabled = false;
+      $("receiver").textContent = name;
+      show("answer");
+    }, function () {
+      $("open").disabled = false;
+      $("error").textContent = "Wrong PIN for " + person.n + ".";
+    });
+  });
+
+  // Personal link: page#name-1234 goes straight to that person with the PIN filled in.
+  var m = /^#([a-z]+)-(\d{4})$/i.exec(location.hash);
+  if (m) {
+    var found = PEOPLE.filter(function (p) { return p.n.toLowerCase() === m[1].toLowerCase(); })[0];
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    if (found) choose(found, m[2]);
+  }
+})();
+</script>
 </body>
 </html>
